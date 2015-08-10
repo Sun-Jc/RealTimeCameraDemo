@@ -174,7 +174,7 @@ public class CameraCaptureFragment extends Fragment {
             disp += delay + ", ";
             textDisp.setText(disp);
 
-            //FastFourierTransformer
+            FastFourierTransformer
 
             if (imgAvg == 0 || imgAvg == 255) {
                 Log.i(DEBUG,"bad imgAvg");

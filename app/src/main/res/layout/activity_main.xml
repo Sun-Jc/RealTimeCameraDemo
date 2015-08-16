@@ -8,9 +8,8 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="122dp"
         android:id="@+id/mainContainer"
-        android:background="#bff2ff"></FrameLayout>
+        android:background="#bff2ff"
+        android:layout_alignParentTop="true"></FrameLayout>
 </RelativeLayout>

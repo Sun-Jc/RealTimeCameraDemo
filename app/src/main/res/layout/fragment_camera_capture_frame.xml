@@ -15,13 +15,28 @@
             android:layout_height="wrap_content"
             android:id="@+id/cameraPreview"
             android:layout_gravity="center" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="224dp"
+            android:text="Avg"
+            android:id="@+id/textDisp"
+            android:layout_gravity="left|top"
+            android:textColor="#ffffff" />
     </FrameLayout>
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="Avg"
-        android:id="@+id/textDisp"
-        android:layout_gravity="left|center_vertical" />
+    <sunjc.realtimecamerademo.FigureDisp
+        android:layout_width="fill_parent"
+        android:layout_height="180dp"
+        android:id="@+id/figureBelow"
+        android:layout_gravity="center_horizontal|bottom"
+        android:background="#11321d" />
+
+    <sunjc.realtimecamerademo.FigureDisp
+        android:layout_width="fill_parent"
+        android:layout_height="170dp"
+        android:id="@+id/figureAbove"
+        android:layout_gravity="right|center_vertical"
+        android:background="#42101e" />
 
 </FrameLayout>

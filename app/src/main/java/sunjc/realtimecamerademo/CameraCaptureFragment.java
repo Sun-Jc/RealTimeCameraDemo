@@ -41,6 +41,9 @@ public class CameraCaptureFragment extends Fragment {
     Queue<Integer> windowSignal;
     Queue<Long> windowTime;
 
+    //CallBack
+    OnMeasurementListener mOnMeasureListener;
+
     /*************fragment and camera surface view stuff********/
     public CameraCaptureFragment() {
         // Required empty public constructor
@@ -247,7 +250,9 @@ public class CameraCaptureFragment extends Fragment {
 
                 int heartRate = (int)Math.ceil(freqIndex*freqResolution*60);
                 Log.d("sunjc-debug","freq"+heartRate);
-                textDisp.setText("Heart Rate: "+heartRate);
+                textDisp.setText("Heart Rate: " + heartRate);
+
+                mOnMeasureListener.onMeasurementCallback(heartRate);
 
                 if (imgAvg == 0 || imgAvg == 255) {
                     Log.i(DEBUG,"bad imgAvg");
@@ -275,5 +280,13 @@ public class CameraCaptureFragment extends Fragment {
         }else{
             return -1;
         }
+    }
+
+    void setmOnMeasureListner(OnMeasurementListener listener){
+        mOnMeasureListener = listener;
+    }
+
+    interface OnMeasurementListener{
+        void onMeasurementCallback(int heartRate);
     }
 }

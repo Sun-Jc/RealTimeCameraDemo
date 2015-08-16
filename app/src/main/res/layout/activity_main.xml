@@ -10,7 +10,8 @@
         android:layout_height="wrap_content"
         android:text="test outside"
         android:id="@+id/testText"
-        android:layout_gravity="right|top" />
+        android:layout_gravity="right|top"
+        android:textColor="#ff2931" />
 
     <FrameLayout
         android:layout_width="match_parent"

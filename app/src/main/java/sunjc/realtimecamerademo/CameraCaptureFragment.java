@@ -1,9 +1,8 @@
 package sunjc.realtimecamerademo;
 
+import android.app.Fragment;
 import android.hardware.Camera;
 import android.os.Bundle;
-import android.app.Fragment;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -17,7 +16,6 @@ import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -27,22 +25,131 @@ public class CameraCaptureFragment extends Fragment {
     //consts
     static final String DEBUG = "SunJc_debug";
 
-    //camera and the surfaceview
-    private SurfaceView mCameraSurfacePreview;
-    private SurfaceHolder mSurfaceHolder;
-    private Camera mCamera;
-
+    //consts about processing
+    static final int windowSize = 256;
     //measurement vars
     TextView textDisp;
     FigureDisp figureAbove;
     FigureDisp figureBelow;
-    private long startTime;
     String disp;
     Queue<Integer> windowSignal;
     Queue<Long> windowTime;
-
     //CallBack
     OnMeasurementListener mOnMeasureListener;
+    //camera and the surfaceview
+    private SurfaceView mCameraSurfacePreview;
+    private SurfaceHolder mSurfaceHolder;
+    private Camera mCamera;
+    private long startTime;
+    /*************
+     * mesurement and signal processing
+     ********/
+    private Camera.PreviewCallback mPreviewCallback = new Camera.PreviewCallback() {
+        @Override
+        public void onPreviewFrame(byte[] data, Camera camera) {
+
+            //get camera size
+            if (data == null)
+                throw new NullPointerException();
+            Camera.Size size = camera.getParameters().getPreviewSize();
+            if (size == null)
+                throw new NullPointerException();
+            int width = size.width;
+            int height = size.height;
+
+            //get time and real-time camera data
+            long nowTime = System.currentTimeMillis();
+            int imgAvg = ImageProcessing.decodeYUV420SPtoRedAvg(data.clone(), width, height);
+
+            /**********processing********/
+            windowSignal.offer(imgAvg);
+            windowTime.offer(nowTime);
+
+            if (windowSignal.size() > windowSize) {
+
+                //remain window of a fixed size
+                windowSignal.poll();
+                startTime = windowTime.poll();
+
+                //get basic aux vars
+                //during time of this window
+                double delay = (nowTime - startTime) / 1000.0;
+                //sampleRate of this window
+                double sampleRate = windowSize / delay;
+                //max frequency of corresponding frequency domain
+                double freqDomRange = sampleRate / 2;
+                //number of *intervals* in the corresponding frequency domain
+                int freqDomLen = windowSize / 2;
+                //how many Hz(s) does one freqDom interval means
+                double freqResolution = freqDomRange / freqDomLen;
+
+                //sig: this window
+                double[] sig = new double[windowSignal.size()];
+                int count = 0;
+                for (Integer it : windowSignal) {
+                    sig[count] = it;
+                    count++;
+                }
+
+                //FFT
+                //ampInFreq: frequency domain, size: freqDomLen
+                FastFourierTransformer ffter = new FastFourierTransformer(DftNormalization.STANDARD);
+                //@?? INVERSE?
+                Complex[] freqDom = ffter.transform(sig, TransformType.INVERSE);
+                double[] ampInFreq = new double[freqDomLen];
+                for (int i = 0; i < freqDomLen; i++) {
+                    ampInFreq[i] = freqDom[i + 1].abs();
+                }
+
+                //find peak
+                int freqIndex = findPeakIndex(ampInFreq);
+
+                //get the final result and pass it back to upper layer
+                //heartRate: the measurement result of heart rate
+                int heartRate = (int) Math.ceil(freqIndex * freqResolution * 60);
+                mOnMeasureListener.onMeasurementCallback(heartRate);
+
+                //output result for debug
+                //Log.d("sunjc-debug","freq"+heartRate);
+                textDisp.setText("Heart Rate: " + heartRate);
+
+                //draw real-time figure
+                figureAbove.set(ampInFreq);
+                figureAbove.invalidate();
+                figureBelow.set(sig);
+                figureBelow.invalidate();
+
+            }
+        }
+    };
+    private SurfaceHolder.Callback mCameraSurfaceCallback = new SurfaceHolder.Callback() {
+        @Override
+        public void surfaceCreated(SurfaceHolder holder) {
+            try {
+                //Log.i(DEBUG, "SurfaceHolder.Callback：surface Created");
+                mCamera.setPreviewDisplay(mSurfaceHolder);//set the surface to be used for live preview
+                mCamera.setPreviewCallback(mPreviewCallback);
+            } catch (Exception ex) {
+                if (null != mCamera) {
+                    mCamera.release();
+                    mCamera = null;
+                }
+                //Log.i(DEBUG + "initCamera", ex.getMessage());
+            }
+        }
+
+        @Override
+        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+            //Log.i(DEBUG, "SurfaceHolder.Callback：Surface Changed");
+            initCamera(width, height);
+        }
+
+        @Override
+        public void surfaceDestroyed(SurfaceHolder holder) {
+
+            //Log.i(DEBUG, "SurfaceHolder.Callback：Surface Destroyed");
+        }
+    };
 
     /*************fragment and camera surface view stuff********/
     public CameraCaptureFragment() {
@@ -75,7 +182,7 @@ public class CameraCaptureFragment extends Fragment {
             getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         } catch (Exception e) {
-            Log.e(getString(R.string.app_name), "failed to open Camera");
+            //Log.e(getString(R.string.app_name), "failed to open Camera");
             e.printStackTrace();
         }
 
@@ -85,7 +192,7 @@ public class CameraCaptureFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        Log.i(DEBUG, "pause");
+        //Log.i(DEBUG, "pause");
         mCamera.setPreviewCallback(null);
         mCamera.stopPreview();
         mCamera.release();
@@ -109,37 +216,8 @@ public class CameraCaptureFragment extends Fragment {
         windowTime = new LinkedList<Long>();
     }
 
-    private SurfaceHolder.Callback mCameraSurfaceCallback = new SurfaceHolder.Callback() {
-        @Override
-        public void surfaceCreated(SurfaceHolder holder) {
-            try {
-                Log.i(DEBUG, "SurfaceHolder.Callback：surface Created");
-                mCamera.setPreviewDisplay(mSurfaceHolder);//set the surface to be used for live preview
-                mCamera.setPreviewCallback(mPreviewCallback);
-            } catch (Exception ex) {
-                if (null != mCamera) {
-                    mCamera.release();
-                    mCamera = null;
-                }
-                Log.i(DEBUG + "initCamera", ex.getMessage());
-            }
-        }
-
-        @Override
-        public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            Log.i(DEBUG, "SurfaceHolder.Callback：Surface Changed");
-            initCamera(width, height);
-        }
-
-        @Override
-        public void surfaceDestroyed(SurfaceHolder holder) {
-
-            Log.i(DEBUG, "SurfaceHolder.Callback：Surface Destroyed");
-        }
-    };
-
     private void initCamera(int width, int height) {//call in surfaceChanged
-        Log.i(DEBUG, "going into initCamera");
+        //Log.i(DEBUG, "going into initCamera");
         if (null != mCamera) {
             try {
                 Camera.Parameters parameters = mCamera.getParameters();
@@ -147,7 +225,7 @@ public class CameraCaptureFragment extends Fragment {
                 Camera.Size size = getSmallestPreviewSize(width, height, parameters);
                 if (size != null) {
                     parameters.setPreviewSize(size.width, size.height);
-                    Log.d(DEBUG, "Using width=" + size.width + " height=" + size.height);
+                    //Log.d(DEBUG, "Using width=" + size.width + " height=" + size.height);
                 }
                 mCamera.setParameters(parameters);
                 mCamera.startPreview();
@@ -173,96 +251,6 @@ public class CameraCaptureFragment extends Fragment {
         }
         return result;
     }
-
-    /*************mesurement and signal processing********/
-    private Camera.PreviewCallback mPreviewCallback = new Camera.PreviewCallback() {
-        @Override
-        public void onPreviewFrame(byte[] data, Camera camera) {
-            if (data == null) throw new NullPointerException();
-            Camera.Size size = camera.getParameters().getPreviewSize();
-            if (size == null) throw new NullPointerException();
-
-            int width = size.width;
-            int height = size.height;
-
-            long nowTime = System.currentTimeMillis();
-            int imgAvg = ImageProcessing.decodeYUV420SPtoRedAvg(data.clone(), width,height);
-
-            //Log.i(DEBUG,"Avg:"+Integer.toString(imgAvg));
-
-            //long delay = nowTime - startTime;
-            //startTime = nowTime;
-
-            //disp += delay + ", ";
-            //textDisp.setText(disp);
-
-
-            /**********processing********/
-            windowSignal.offer(imgAvg);
-            windowTime.offer(nowTime);
-
-            int windowSize = 256;
-
-            if(windowSignal.size()>windowSize){
-                windowSignal.poll();
-                startTime= windowTime.poll();
-
-                double delay = ( nowTime - startTime)/1000.0;
-                double sampleRate = windowSize/delay;
-                double freqResolution = sampleRate/2/(windowSize/2);
-
-                double[] sig = new double[windowSignal.size()];
-
-                int count = 0;
-                for(Integer it:windowSignal){
-                    sig[count] = it;
-                    count++;
-                }
-
-                FastFourierTransformer ffter = new FastFourierTransformer(DftNormalization.STANDARD);
-                Complex[] freqDom = ffter.transform(sig, TransformType.INVERSE);
-                double[] ampInFreq = new double[freqDom.length];
-                for(int i =0;i<ampInFreq.length;i++){
-                    ampInFreq[i] = freqDom[i].abs();
-                }
-                ampInFreq[0] = 0;
-
-                double maxAmp = -1;
-                for(int i=0;i<ampInFreq.length;i++){
-                    if(ampInFreq[i]>maxAmp){
-                        maxAmp = ampInFreq[i];
-                    }
-                }
-
-                double[] acutalFreqDom = new double[ampInFreq.length/2];
-                for(int i=5;i<ampInFreq.length/2;i++){
-                    acutalFreqDom[i] = ampInFreq[i+1];
-                }
-
-                //Log.d("sunjc-debug","max"+maxAmp);
-
-                int freqIndex = findPeakIndex(acutalFreqDom);
-
-                figureAbove.set(acutalFreqDom);
-                figureAbove.invalidate();
-                figureBelow.set(sig);
-                figureBelow.invalidate();
-
-                int heartRate = (int)Math.ceil(freqIndex*freqResolution*60);
-                Log.d("sunjc-debug","freq"+heartRate);
-                textDisp.setText("Heart Rate: " + heartRate);
-
-                mOnMeasureListener.onMeasurementCallback(heartRate);
-
-                if (imgAvg == 0 || imgAvg == 255) {
-                    Log.i(DEBUG,"bad imgAvg");
-                    return;
-                }
-            }
-
-        }
-    };
-
 
     int findPeakIndex(double[] s){
         if(s.length>=3) {

@@ -5,22 +5,17 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-
-import java.util.Queue;
 
 /**
  * Created by SunJc on 8/16/15.
  */
 public class FigureDisp extends SurfaceView implements SurfaceHolder.Callback{
 
+    final static int margin = 50;
     int mWidth;
     int mHeight;
-
-    final static int margin = 50;
-
     double[] vals;
     int length;
 
@@ -45,7 +40,7 @@ public class FigureDisp extends SurfaceView implements SurfaceHolder.Callback{
     // Region  these are from SurfaceHodler.CallBack
     @Override
     public void surfaceCreated(SurfaceHolder holder) {
-        Log.i("MyDebug", "Surface:Created");
+        //Log.i("MyDebug", "Surface:Created");
         setWillNotDraw(false);
         // setBackgroundColor(Color.GRAY);
     }
@@ -53,7 +48,7 @@ public class FigureDisp extends SurfaceView implements SurfaceHolder.Callback{
     @Override
     public void surfaceChanged(SurfaceHolder holder, int format, int width,
                                int height) {
-        Log.i("MyDebug", "Surface:" + width + "x" + height);
+        //Log.i("MyDebug", "Surface:" + width + "x" + height);
         mWidth = width-2*margin;
         mHeight = height-2*margin;
     }

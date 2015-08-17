@@ -82,6 +82,10 @@ public class CameraCaptureFragment extends Fragment {
                 windowSignal.poll();
                 startTime = windowTime.poll();
 
+                /**
+                 * here to filter
+                 */
+
                 //get basic aux vars
                 //during time of this window
                 double delay = (nowTime - startTime) / 1000.0;
@@ -105,12 +109,13 @@ public class CameraCaptureFragment extends Fragment {
                 //FFT
                 //ampInFreq: frequency domain, size: freqDomLen
                 FastFourierTransformer ffter = new FastFourierTransformer(DftNormalization.STANDARD);
-                //@?? INVERSE?
-                Complex[] freqDom = ffter.transform(sig, TransformType.INVERSE);
+                Complex[] freqDom = ffter.transform(sig, TransformType.FORWARD);
                 double[] ampInFreq = new double[freqDomLen];
                 for (int i = 0; i < freqDomLen; i++) {
                     ampInFreq[i] = freqDom[i + 1].abs();
                 }
+
+                //here to select peak
 
                 //find peak
                 int freqIndex = findPeakIndex(ampInFreq);
@@ -120,12 +125,81 @@ public class CameraCaptureFragment extends Fragment {
                 int heartRate = (int) Math.ceil(freqIndex * freqResolution * 60);
                 mOnMeasureListener.onMeasurementCallback(heartRate);
 
+                /***********************************/
+//FFT
+                //ampInFreq: frequency domain, size: freqDomLen
+                FastFourierTransformer ffter2 = new FastFourierTransformer(DftNormalization.STANDARD);
+                //@?? INVERSE?
+                Complex[] freqDom2 = ffter2.transform(sig, TransformType.INVERSE);
+                double[] ampInFreq2 = new double[freqDomLen];
+                for (int i = 0; i < freqDomLen; i++) {
+                    ampInFreq2[i] = freqDom2[i + 1].abs();
+                }
+
+                /**
+                 * here to select peak
+                 */
+
+                //find peak
+                int freqIndex2 = findPeakIndex(ampInFreq2);
+
+                //get the final result and pass it back to upper layer
+                //heartRate: the measurement result of heart rate
+                int heartRate2 = (int) Math.ceil(freqIndex2 * freqResolution * 60);
+/*************/
+                //FFT/***********************************/
+                //ampInFreq: frequency domain, size: freqDomLen
+                FastFourierTransformer ffter3 = new FastFourierTransformer(DftNormalization.UNITARY);
+                //@?? INVERSE?
+                Complex[] freqDom3 = ffter3.transform(sig, TransformType.FORWARD);
+                double[] ampInFreq3 = new double[freqDomLen];
+                for (int i = 0; i < freqDomLen; i++) {
+                    ampInFreq3[i] = freqDom3[i + 1].abs();
+                }
+
+                /**
+                 * here to select peak
+                 */
+
+                //find peak
+                int freqIndex3 = findPeakIndex(ampInFreq3);
+
+                //get the final result and pass it back to upper layer
+                //heartRate: the measurement result of heart rate
+                int heartRate3 = (int) Math.ceil(freqIndex3 * freqResolution * 60);
+                /***********************************/
+
+                //FFT/***********************************/
+//FFT
+                //ampInFreq: frequency domain, size: freqDomLen
+                FastFourierTransformer ffter4 = new FastFourierTransformer(DftNormalization.UNITARY);
+                //@?? INVERSE?
+                Complex[] freqDom4 = ffter4.transform(sig, TransformType.INVERSE);
+                double[] ampInFreq4 = new double[freqDomLen];
+                for (int i = 0; i < freqDomLen; i++) {
+                    ampInFreq4[i] = freqDom4[i + 1].abs();
+                }
+
+                /**
+                 * here to select peak
+                 */
+
+                //find peak
+                int freqIndex4 = findPeakIndex(ampInFreq4);
+
+                //get the final result and pass it back to upper layer
+                //heartRate: the measurement result of heart rate
+                int heartRate4 = (int) Math.ceil(freqIndex4 * freqResolution * 60);
+                //FFT/***********************************/
+
+
+
                 //output result for debug
                 //Log.d("sunjc-debug","freq"+heartRate);
-                textDisp.setText("Heart Rate: " + heartRate);
+                textDisp.setText("Heart Rate: " + heartRate+"\n"+heartRate2+"\n"+heartRate3+"\n"+heartRate4);
 
                 //draw real-time figure
-                figureAbove.set(ampInFreq);
+                figureAbove.set(ampInFreq2);
                 figureAbove.invalidate();
                 figureBelow.set(sig);
                 figureBelow.invalidate();

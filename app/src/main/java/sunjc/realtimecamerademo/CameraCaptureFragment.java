@@ -16,7 +16,9 @@ import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
 import org.apache.commons.math3.transform.TransformType;
 
+import java.util.Comparator;
 import java.util.LinkedList;
+import java.util.PriorityQueue;
 import java.util.Queue;
 
 /**
@@ -36,7 +38,13 @@ public class CameraCaptureFragment extends Fragment {
     static final String DEBUG = "SunJc_debug";
 
     //consts about processing
-    static final int windowSize = 256;
+    static final int sigWindowSize = 256;
+    static final int hrWindowSize = 100;
+    static final int minHR = 50;
+    static final int maxHR = 170;
+    static final double instantGap = 0.3;
+    static final int offset = 7;
+
     //measurement vars
     TextView textDisp;
     FigureDisp figureAbove;
@@ -44,6 +52,8 @@ public class CameraCaptureFragment extends Fragment {
     String disp;
     Queue<Integer> windowSignal;
     Queue<Long> windowTime;
+    Queue<Integer> windowHeartRate;
+
     //CallBack
     OnMeasurementListener mOnMeasureListener;
     //camera and the surfaceview
@@ -76,7 +86,7 @@ public class CameraCaptureFragment extends Fragment {
             windowSignal.offer(imgAvg);
             windowTime.offer(nowTime);
 
-            if (windowSignal.size() > windowSize) {
+            if (windowSignal.size() > sigWindowSize) {
 
                 //remain window of a fixed size
                 windowSignal.poll();
@@ -90,11 +100,11 @@ public class CameraCaptureFragment extends Fragment {
                 //during time of this window
                 double delay = (nowTime - startTime) / 1000.0;
                 //sampleRate of this window
-                double sampleRate = windowSize / delay;
+                double sampleRate = sigWindowSize / delay;
                 //max frequency of corresponding frequency domain
                 double freqDomRange = sampleRate / 2;
                 //number of *intervals* in the corresponding frequency domain
-                int freqDomLen = windowSize / 2;
+                int freqDomLen = sigWindowSize / 2;
                 //how many Hz(s) does one freqDom interval means
                 double freqResolution = freqDomRange / freqDomLen;
 
@@ -107,99 +117,92 @@ public class CameraCaptureFragment extends Fragment {
                 }
 
                 //FFT
+                // here through test, we know that STANDARD or NORMAL, FORWARD or INVERSE don't matter!
                 //ampInFreq: frequency domain, size: freqDomLen
                 FastFourierTransformer ffter = new FastFourierTransformer(DftNormalization.STANDARD);
-                Complex[] freqDom = ffter.transform(sig, TransformType.FORWARD);
+                final Complex[] freqDom = ffter.transform(sig, TransformType.FORWARD);
                 double[] ampInFreq = new double[freqDomLen];
                 for (int i = 0; i < freqDomLen; i++) {
                     ampInFreq[i] = freqDom[i + 1].abs();
                 }
 
-                //here to select peak
+                //here to select one peak as heart rate
 
-                //find peak
+                //average heart rate in the small window
+                int sumHR = 0;
+                for(int i:windowHeartRate)
+                    sumHR += i;
+                int avgWindow = 0;
+                if(windowHeartRate.size()<3)
+                    avgWindow = 70;
+                else
+                    avgWindow = (int)Math.ceil(sumHR/windowHeartRate.size());
+
+                //find all possible peaks
+                if(ampInFreq.length<3)
+                    return;
+                int pqSize = (int)Math.floor((maxHR - minHR)/(freqResolution*60))+2;
+                PriorityQueue<peakPoint> peaks = new PriorityQueue<peakPoint>(pqSize,
+                        new Comparator<peakPoint>() {
+                            @Override
+                            public int compare(peakPoint lhs, peakPoint rhs) {
+                                return (int)(rhs.ampVal - lhs.ampVal);
+                            }
+                        });
+                for(int i=1;i<ampInFreq.length-1;i++){
+                    if( ampInFreq[i-1]<ampInFreq[i] && ampInFreq[i+1]<ampInFreq[i]){
+                        int thisHR = (int)Math.floor(i* freqResolution * 60);
+                        if( thisHR > minHR && thisHR < maxHR){
+                            peaks.offer(new peakPoint(thisHR,ampInFreq[i]));
+                        }else if(thisHR>maxHR) {
+                            break;
+                        }
+                    }
+                }
+
+                int test_actual = -1;
+
+                int heartRate = avgWindow;
+                while(!peaks.isEmpty()){
+                    peakPoint p = peaks.poll();
+                    if( Math.abs(p.hrVal-avgWindow) < avgWindow * instantGap){
+
+                        heartRate = p.hrVal;
+
+                        test_actual = heartRate;
+
+                        break;
+                    }
+                }
+
+                windowHeartRate.offer(heartRate);
+                if(windowHeartRate.size()>hrWindowSize)
+                    windowHeartRate.remove();
+                double currentRatio = 0.3;
+                heartRate = (int)Math.ceil((currentRatio) * heartRate + (1 - currentRatio) * avgWindow);
+                heartRate += offset;
+                mOnMeasureListener.onMeasurementCallback(heartRate);
+
+
+                //test simply find peak
+                int freqIndex = findPeakIndex(ampInFreq);
+                int test_Simple = (int) Math.ceil(freqIndex * freqResolution * 60);
+
+
+                /*//find peak
                 int freqIndex = findPeakIndex(ampInFreq);
 
                 //get the final result and pass it back to upper layer
                 //heartRate: the measurement result of heart rate
                 int heartRate = (int) Math.ceil(freqIndex * freqResolution * 60);
-                mOnMeasureListener.onMeasurementCallback(heartRate);
-
-                /***********************************/
-//FFT
-                //ampInFreq: frequency domain, size: freqDomLen
-                FastFourierTransformer ffter2 = new FastFourierTransformer(DftNormalization.STANDARD);
-                //@?? INVERSE?
-                Complex[] freqDom2 = ffter2.transform(sig, TransformType.INVERSE);
-                double[] ampInFreq2 = new double[freqDomLen];
-                for (int i = 0; i < freqDomLen; i++) {
-                    ampInFreq2[i] = freqDom2[i + 1].abs();
-                }
-
-                /**
-                 * here to select peak
-                 */
-
-                //find peak
-                int freqIndex2 = findPeakIndex(ampInFreq2);
-
-                //get the final result and pass it back to upper layer
-                //heartRate: the measurement result of heart rate
-                int heartRate2 = (int) Math.ceil(freqIndex2 * freqResolution * 60);
-/*************/
-                //FFT/***********************************/
-                //ampInFreq: frequency domain, size: freqDomLen
-                FastFourierTransformer ffter3 = new FastFourierTransformer(DftNormalization.UNITARY);
-                //@?? INVERSE?
-                Complex[] freqDom3 = ffter3.transform(sig, TransformType.FORWARD);
-                double[] ampInFreq3 = new double[freqDomLen];
-                for (int i = 0; i < freqDomLen; i++) {
-                    ampInFreq3[i] = freqDom3[i + 1].abs();
-                }
-
-                /**
-                 * here to select peak
-                 */
-
-                //find peak
-                int freqIndex3 = findPeakIndex(ampInFreq3);
-
-                //get the final result and pass it back to upper layer
-                //heartRate: the measurement result of heart rate
-                int heartRate3 = (int) Math.ceil(freqIndex3 * freqResolution * 60);
-                /***********************************/
-
-                //FFT/***********************************/
-//FFT
-                //ampInFreq: frequency domain, size: freqDomLen
-                FastFourierTransformer ffter4 = new FastFourierTransformer(DftNormalization.UNITARY);
-                //@?? INVERSE?
-                Complex[] freqDom4 = ffter4.transform(sig, TransformType.INVERSE);
-                double[] ampInFreq4 = new double[freqDomLen];
-                for (int i = 0; i < freqDomLen; i++) {
-                    ampInFreq4[i] = freqDom4[i + 1].abs();
-                }
-
-                /**
-                 * here to select peak
-                 */
-
-                //find peak
-                int freqIndex4 = findPeakIndex(ampInFreq4);
-
-                //get the final result and pass it back to upper layer
-                //heartRate: the measurement result of heart rate
-                int heartRate4 = (int) Math.ceil(freqIndex4 * freqResolution * 60);
-                //FFT/***********************************/
-
-
+                mOnMeasureListener.onMeasurementCallback(heartRate);*/
 
                 //output result for debug
                 //Log.d("sunjc-debug","freq"+heartRate);
-                textDisp.setText("Heart Rate: " + heartRate+"\n"+heartRate2+"\n"+heartRate3+"\n"+heartRate4);
+                textDisp.setText("Heart Rate: " + heartRate + "\nacutual" + test_actual +"\nsimple"+test_Simple+ "\navg"+avgWindow);
 
                 //draw real-time figure
-                figureAbove.set(ampInFreq2);
+                figureAbove.set(ampInFreq);
                 figureAbove.invalidate();
                 figureBelow.set(sig);
                 figureBelow.invalidate();
@@ -308,6 +311,7 @@ public class CameraCaptureFragment extends Fragment {
 
         windowSignal = new LinkedList<Integer>();
         windowTime = new LinkedList<Long>();
+        windowHeartRate = new LinkedList<Integer>();
     }
 
     private void initCamera(int width, int height) {//call in surfaceChanged
@@ -370,5 +374,14 @@ public class CameraCaptureFragment extends Fragment {
 
     interface OnMeasurementListener{
         void onMeasurementCallback(int heartRate);
+    }
+
+    class peakPoint{
+        int hrVal;
+        double ampVal;
+        public peakPoint(int hrVal,double ampVal){
+            this.ampVal = ampVal;
+            this.hrVal = hrVal;
+        }
     }
 }

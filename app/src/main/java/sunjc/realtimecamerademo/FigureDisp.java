@@ -84,11 +84,15 @@ public class FigureDisp extends SurfaceView implements SurfaceHolder.Callback{
                 minVal = vals[i];
         }
 
-        int xstep = (int)Math.floor(mWidth/(length-1));
-        int ystep = (int)Math.floor(mHeight/(maxVal-minVal));
+        double xstep = mWidth/(length-1);
+        double ystep = mHeight/(maxVal-minVal);
 
         for(int i=1;i<length;i++){
-            c.drawLine(xstep * i + margin, margin + mHeight - (int) Math.floor(ystep * (vals[i] - minVal)), xstep * (i - 1) + margin, margin + mHeight - (int) Math.floor(ystep * (vals[i - 1] - minVal)), paint);
+            int x1 = (int)(xstep * i) + margin;
+            int y1 = margin + mHeight - (int) Math.floor(ystep * (vals[i] - minVal));
+            int x2 = (int)(xstep * (i - 1)) + margin;
+            int y2 =  margin + mHeight - (int) Math.floor(ystep * (vals[i - 1] - minVal));
+            c.drawLine(x1,y1 ,x2 ,y2, paint);
         }
     }
 }

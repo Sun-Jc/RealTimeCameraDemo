@@ -1,9 +1,10 @@
 package sunjc.realtimecamerademo;
 
-import android.app.Activity;
-import android.app.FragmentTransaction;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.widget.TextView;
 
 
@@ -13,7 +14,7 @@ import android.widget.TextView;
  * in SG and NUS
  * Date: Aug. 2015
  */
-public class MainActivity extends Activity {
+public class MainActivity extends FragmentActivity {
 
     CameraCaptureFragment mCameraCaptureFragment;
     TextView mTestText;
@@ -35,7 +36,7 @@ public class MainActivity extends Activity {
     }
 
     private void createFragment() {
-        android.app.FragmentManager fManager = getFragmentManager();
+        FragmentManager fManager = getSupportFragmentManager();
         FragmentTransaction fTransaction = fManager.beginTransaction();
 
         //here create an instance of CCF to measure heart rate

@@ -184,7 +184,7 @@ public class CameraCaptureFragment extends Fragment {
                 mOnMeasureListener.onMeasurementCallback(heartRate);
 
 
-                //test simply find peak
+                //test simply find peak 
                 int freqIndex = findPeakIndex(ampInFreq);
                 int test_Simple = (int) Math.ceil(freqIndex * freqResolution * 60);
 

@@ -19,6 +19,16 @@ import org.apache.commons.math3.transform.TransformType;
 import java.util.LinkedList;
 import java.util.Queue;
 
+/**
+ * this fragment measures heart rate
+ * Author: SunJc
+ * in SG and NUS
+ * Date: Aug. 2015
+ * Reference and Thanks to: Justin Wetherell <phishman3579@gmail.com>
+ * Libraries and Thanks to: Apache Math3
+ * key algorithm of DSP in onPreviewFrame
+ * you may not change other parts
+ */
 
 public class CameraCaptureFragment extends Fragment {
 
@@ -41,9 +51,10 @@ public class CameraCaptureFragment extends Fragment {
     private SurfaceHolder mSurfaceHolder;
     private Camera mCamera;
     private long startTime;
-    /*************
-     * mesurement and signal processing
-     ********/
+
+    /*************************************
+     * measurement and signal processing
+     ************************************/
     private Camera.PreviewCallback mPreviewCallback = new Camera.PreviewCallback() {
         @Override
         public void onPreviewFrame(byte[] data, Camera camera) {
@@ -122,6 +133,15 @@ public class CameraCaptureFragment extends Fragment {
             }
         }
     };
+
+
+
+
+
+
+    /*******************************************************
+     * no modifying at following part
+     *********************************************************/
     private SurfaceHolder.Callback mCameraSurfaceCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {

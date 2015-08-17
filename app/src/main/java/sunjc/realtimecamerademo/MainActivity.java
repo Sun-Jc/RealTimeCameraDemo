@@ -6,6 +6,13 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.widget.TextView;
 
+
+/**
+ * This activity is upper layer of measurement module (cameraCaptureFragment)
+ * Author: SunJc
+ * in SG and NUS
+ * Date: Aug. 2015
+ */
 public class MainActivity extends Activity {
 
     CameraCaptureFragment mCameraCaptureFragment;
@@ -31,7 +38,9 @@ public class MainActivity extends Activity {
         android.app.FragmentManager fManager = getFragmentManager();
         FragmentTransaction fTransaction = fManager.beginTransaction();
 
+        //here create an instance of CCF to measure heart rate
         mCameraCaptureFragment = new CameraCaptureFragment();
+        //here
         mCameraCaptureFragment.setmOnMeasureListner(
                 new CameraCaptureFragment.OnMeasurementListener() {
                     @Override

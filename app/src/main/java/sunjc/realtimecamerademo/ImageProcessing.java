@@ -2,8 +2,9 @@ package sunjc.realtimecamerademo;
 
 /**
  * This abstract class is used to process images.
- * 
  * @author Justin Wetherell <phishman3579@gmail.com>
+ * part of heart rate measurement app
+ * you don't need to modify this class
  */
 public abstract class ImageProcessing {
 

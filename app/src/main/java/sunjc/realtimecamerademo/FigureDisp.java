@@ -9,7 +9,11 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 /**
- * Created by SunJc on 8/16/15.
+ * this view draws plot figure
+ * Author: SunJc
+ * in SG and NUS
+ * Date: Aug. 2015
+ * helps to display the signal processing result
  */
 public class FigureDisp extends SurfaceView implements SurfaceHolder.Callback{
 

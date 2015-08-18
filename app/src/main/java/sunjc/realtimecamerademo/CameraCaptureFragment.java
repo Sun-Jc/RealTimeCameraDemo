@@ -42,8 +42,10 @@ public class CameraCaptureFragment extends Fragment {
     static final int hrWindowSize = 100;
     static final int minHR = 50;
     static final int maxHR = 170;
-    static final double instantGap = 0.3;
-    static final int offset = 7;
+    static final double instantGap = 0.4;
+    static final int offset = 8;
+    static final int clWindowSize = 100;
+    static double currentRatio = 0.2;
 
     //measurement vars
     TextView textDisp;
@@ -53,6 +55,7 @@ public class CameraCaptureFragment extends Fragment {
     Queue<Integer> windowSignal;
     Queue<Long> windowTime;
     Queue<Integer> windowHeartRate;
+    int hrCount;
 
     //CallBack
     OnMeasurementListener mOnMeasureListener;
@@ -175,10 +178,17 @@ public class CameraCaptureFragment extends Fragment {
                     }
                 }
 
+
+                if(hrCount>clWindowSize){
+                    windowHeartRate.clear();
+                    hrCount ++;
+                    hrCount = 0;
+                }
                 windowHeartRate.offer(heartRate);
                 if(windowHeartRate.size()>hrWindowSize)
                     windowHeartRate.remove();
-                double currentRatio = 0.3;
+
+
                 heartRate = (int)Math.ceil((currentRatio) * heartRate + (1 - currentRatio) * avgWindow);
                 heartRate += offset;
                 mOnMeasureListener.onMeasurementCallback(heartRate);
@@ -218,7 +228,7 @@ public class CameraCaptureFragment extends Fragment {
 
     /*******************************************************
      * no modifying at following part
-     *********************************************************/
+     *******************************************************/
     private SurfaceHolder.Callback mCameraSurfaceCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder holder) {
@@ -243,7 +253,6 @@ public class CameraCaptureFragment extends Fragment {
 
         @Override
         public void surfaceDestroyed(SurfaceHolder holder) {
-
             //Log.i(DEBUG, "SurfaceHolder.Callback：Surface Destroyed");
         }
     };
@@ -312,6 +321,7 @@ public class CameraCaptureFragment extends Fragment {
         windowSignal = new LinkedList<Integer>();
         windowTime = new LinkedList<Long>();
         windowHeartRate = new LinkedList<Integer>();
+        hrCount = 0;
     }
 
     private void initCamera(int width, int height) {//call in surfaceChanged

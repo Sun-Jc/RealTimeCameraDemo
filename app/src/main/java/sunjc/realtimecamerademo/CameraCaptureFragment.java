@@ -46,7 +46,8 @@ public class CameraCaptureFragment extends Fragment {
     static final int offset = 8;
     static final int clWindowSize = 60;
     static final double currentRatio = 0.2;
-    static final int reasonableMinAvg = 150;
+    static final int reasonableMinAvg = 110;
+    static final int reasonableMaxAvg = 240;
 
     //measurement vars
     TextView textDisp_result;
@@ -198,7 +199,7 @@ public class CameraCaptureFragment extends Fragment {
                 //get the final result and pass it back to upper layer
                 heartRate = (int)Math.ceil((currentRatio) * heartRate + (1 - currentRatio) * avgWindow);
                 heartRate += offset;
-                if(imgAvg<reasonableMinAvg)
+                if(imgAvg<reasonableMinAvg || imgAvg>reasonableMaxAvg)
                     mOnMeasureListener.onNotOnFinger();
                 else
                     mOnMeasureListener.onMeasurementCallback(heartRate);

@@ -17,11 +17,19 @@
             android:layout_gravity="center" />
 
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="183dp"
             android:layout_height="224dp"
-            android:text="Avg"
+            android:text="result"
             android:id="@+id/textDisp"
             android:layout_gravity="left|top"
+            android:textColor="#ffffff" />
+
+        <TextView
+            android:layout_width="149dp"
+            android:layout_height="209dp"
+            android:text="parameters"
+            android:id="@+id/textParameter"
+            android:layout_gravity="right|top"
             android:textColor="#ffffff" />
     </FrameLayout>
 

@@ -46,7 +46,11 @@ public class MainActivity extends FragmentActivity {
                 new CameraCaptureFragment.OnMeasurementListener() {
                     @Override
                     public void onMeasurementCallback(int heartRate) {
-                        mTestText.setText("recv"+heartRate);
+                        mTestText.setText("heart rate"+heartRate);
+                    }
+                    @Override
+                    public void onNotOnFinger(){
+                        mTestText.setText("Please put your finger on camera!");
                     }
                 }
         );

@@ -37,18 +37,20 @@ public class CameraCaptureFragment extends Fragment {
     //consts
     static final String DEBUG = "SunJc_debug";
 
-    //consts about processing
+    //consts about processing: parameters
     static final int sigWindowSize = 256;
     static final int hrWindowSize = 100;
     static final int minHR = 50;
     static final int maxHR = 170;
     static final double instantGap = 0.4;
     static final int offset = 8;
-    static final int clWindowSize = 100;
-    static double currentRatio = 0.2;
+    static final int clWindowSize = 60;
+    static final double currentRatio = 0.2;
+    static final int reasonableMinAvg = 150;
 
     //measurement vars
-    TextView textDisp;
+    TextView textDisp_result;
+    TextView textDisp_parameter;
     FigureDisp figureAbove;
     FigureDisp figureBelow;
     String disp;
@@ -163,22 +165,26 @@ public class CameraCaptureFragment extends Fragment {
                     }
                 }
 
+                //$ debug
                 int test_actual = -1;
+                //$
 
                 int heartRate = avgWindow;
                 while(!peaks.isEmpty()){
                     peakPoint p = peaks.poll();
                     if( Math.abs(p.hrVal-avgWindow) < avgWindow * instantGap){
-
                         heartRate = p.hrVal;
 
+                        //$ debug
                         test_actual = heartRate;
+                        //$
 
                         break;
                     }
                 }
 
 
+                // keep and clear history effect when needed
                 if(hrCount>clWindowSize){
                     windowHeartRate.clear();
                     hrCount ++;
@@ -189,28 +195,31 @@ public class CameraCaptureFragment extends Fragment {
                     windowHeartRate.remove();
 
 
+                //get the final result and pass it back to upper layer
                 heartRate = (int)Math.ceil((currentRatio) * heartRate + (1 - currentRatio) * avgWindow);
                 heartRate += offset;
-                mOnMeasureListener.onMeasurementCallback(heartRate);
+                if(imgAvg<reasonableMinAvg)
+                    mOnMeasureListener.onNotOnFinger();
+                else
+                    mOnMeasureListener.onMeasurementCallback(heartRate);
 
 
+                //$ debug
                 //test simply find peak
                 int freqIndex = findPeakIndex(ampInFreq);
                 int test_Simple = (int) Math.ceil(freqIndex * freqResolution * 60);
-
-
-                /*//find peak
-                int freqIndex = findPeakIndex(ampInFreq);
-
-                //get the final result and pass it back to upper layer
-                //heartRate: the measurement result of heart rate
-                int heartRate = (int) Math.ceil(freqIndex * freqResolution * 60);
-                mOnMeasureListener.onMeasurementCallback(heartRate);*/
+                //$
 
                 //output result for debug
                 //Log.d("sunjc-debug","freq"+heartRate);
-                textDisp.setText("Heart Rate: " + heartRate + "\nacutual" + test_actual +"\nsimple"+test_Simple+ "\navg"+avgWindow);
-
+                String r = "";
+                r+="cur_sig_val: "+imgAvg;
+                String nn = Double.toString(sampleRate);
+                r+="\nsample_rate: "+ nn.substring(0,Math.min(5,nn.length()-1));
+                r+="\npeak_find: "+test_actual;
+                r+="\nsimple_peak_find: "+test_Simple;
+                r+="\naverage_HR: "+avgWindow;
+                textDisp_result.setText(r);
                 //draw real-time figure
                 figureAbove.set(ampInFreq);
                 figureAbove.invalidate();
@@ -314,7 +323,8 @@ public class CameraCaptureFragment extends Fragment {
     }
 
     private void initProcessView(View v){
-        textDisp = (TextView) v.findViewById(R.id.textDisp);
+        textDisp_result = (TextView) v.findViewById(R.id.textDisp);
+        textDisp_parameter = (TextView) v.findViewById(R.id.textParameter);
         figureAbove = (FigureDisp) v.findViewById(R.id.figureAbove);
         figureBelow = (FigureDisp) v.findViewById(R.id.figureBelow);
 
@@ -322,6 +332,18 @@ public class CameraCaptureFragment extends Fragment {
         windowTime = new LinkedList<Long>();
         windowHeartRate = new LinkedList<Integer>();
         hrCount = 0;
+
+
+        String p = "";
+        p+="sigWindowSize="+sigWindowSize;
+        p+="\nhrWindowSize="+hrWindowSize;
+        p+="\nminHR="+minHR;
+        p+="\nmaxHR="+maxHR;
+        p+="\ninstantGap="+instantGap;
+        p+="\noffset="+offset;
+        p+="\nclWindowSize="+clWindowSize;
+        p+="\ncurrentRatio="+currentRatio;
+        textDisp_parameter.setText(p);
     }
 
     private void initCamera(int width, int height) {//call in surfaceChanged
@@ -384,6 +406,7 @@ public class CameraCaptureFragment extends Fragment {
 
     interface OnMeasurementListener{
         void onMeasurementCallback(int heartRate);
+        void onNotOnFinger();
     }
 
     class peakPoint{

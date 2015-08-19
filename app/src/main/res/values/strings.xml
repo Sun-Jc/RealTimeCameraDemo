@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RealTimeCameraDemo</string>
-
+    <string name="app_name">HeartRateMeasuringDemo</string>
+    <string name="about">Heart Rate Measurement Demo\nSunJc\n@NUS, SG\n2015 Aug\nmx2009@qq.com\nGitHub: /Sun-Jc/RealTimeCameraDemo\nThank you for testing! :)</string>
 
 </resources>

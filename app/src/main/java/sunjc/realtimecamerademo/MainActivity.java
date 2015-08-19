@@ -1,10 +1,12 @@
 package sunjc.realtimecamerademo;
 
-import android.content.res.Configuration;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 
@@ -18,6 +20,7 @@ public class MainActivity extends FragmentActivity {
 
     CameraCaptureFragment mCameraCaptureFragment;
     TextView mTestText;
+    Button aboutButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,15 +28,25 @@ public class MainActivity extends FragmentActivity {
         setContentView(R.layout.activity_main);
 
         mTestText=(TextView)findViewById(R.id.testText);
+        mTestText.setOnClickListener(
+                new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        Intent intent = new Intent(MainActivity.this, AboutUs.class);
+                        startActivity(intent);
+                    }
+                }
+        );
 
         if (null == savedInstanceState)
             createFragment();
+
     }
 
-    @Override
+    /*@Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
-    }
+    }*/
 
     private void createFragment() {
         FragmentManager fManager = getSupportFragmentManager();
@@ -50,7 +63,7 @@ public class MainActivity extends FragmentActivity {
                     }
                     @Override
                     public void onNotOnFinger(){
-                        mTestText.setText("Please put your finger on camera!");
+                        mTestText.setText("please put finger on camera");
                     }
                 }
         );

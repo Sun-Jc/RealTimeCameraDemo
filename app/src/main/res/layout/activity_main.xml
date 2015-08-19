@@ -8,10 +8,11 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="test outside"
+        android:text="Touch Me For Some Info!"
         android:id="@+id/testText"
         android:layout_gravity="right|top"
-        android:textColor="#ff2931" />
+        android:textColor="#ff2931"
+        android:textSize="25dp" />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -22,4 +23,5 @@
         android:layout_below="@+id/testText">
 
     </FrameLayout>
+
 </RelativeLayout>

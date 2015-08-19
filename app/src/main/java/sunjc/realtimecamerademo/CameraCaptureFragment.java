@@ -39,15 +39,16 @@ public class CameraCaptureFragment extends Fragment {
 
     //consts about processing: parameters
     static final int sigWindowSize = 256;
-    static final int hrWindowSize = 100;
-    static final int minHR = 50;
+    static final int hrWindowSize = 40;
+    static final int minHR = 45;
     static final int maxHR = 170;
-    static final double instantGap = 0.4;
+    static final double instantGap = 0.1;
     static final int offset = 8;
-    static final int clWindowSize = 60;
+    static final int clWindowSize = 50;
     static final double currentRatio = 0.2;
     static final int reasonableMinAvg = 110;
     static final int reasonableMaxAvg = 240;
+    static final int changingTimes = 50;
 
     //measurement vars
     TextView textDisp_result;
@@ -144,6 +145,14 @@ public class CameraCaptureFragment extends Fragment {
                 else
                     avgWindow = (int)Math.ceil(sumHR/windowHeartRate.size());
 
+                //simply find peak to help
+                int freqIndex = findPeakIndex(ampInFreq);
+                int aux_Simple = (int) Math.ceil(freqIndex * freqResolution * 60);
+
+                if( aux_Simple<maxHR && aux_Simple>minHR){
+                    avgWindow = (avgWindow+aux_Simple)/2;
+                }
+
                 //find all possible peaks
                 if(ampInFreq.length<3)
                     return;
@@ -201,15 +210,9 @@ public class CameraCaptureFragment extends Fragment {
                 heartRate += offset;
                 if(imgAvg<reasonableMinAvg || imgAvg>reasonableMaxAvg)
                     mOnMeasureListener.onNotOnFinger();
-                else
+                else if( hrCount% changingTimes == 0)
                     mOnMeasureListener.onMeasurementCallback(heartRate);
 
-
-                //$ debug
-                //test simply find peak
-                int freqIndex = findPeakIndex(ampInFreq);
-                int test_Simple = (int) Math.ceil(freqIndex * freqResolution * 60);
-                //$
 
                 //output result for debug
                 //Log.d("sunjc-debug","freq"+heartRate);
@@ -218,7 +221,7 @@ public class CameraCaptureFragment extends Fragment {
                 String nn = Double.toString(sampleRate);
                 r+="\nsample_rate: "+ nn.substring(0,Math.min(5,nn.length()-1));
                 r+="\npeak_find: "+test_actual;
-                r+="\nsimple_peak_find: "+test_Simple;
+                r+="\nsimple_peak_find: "+aux_Simple;
                 r+="\naverage_HR: "+avgWindow;
                 textDisp_result.setText(r);
                 //draw real-time figure

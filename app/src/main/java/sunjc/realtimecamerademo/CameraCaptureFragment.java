@@ -150,7 +150,7 @@ public class CameraCaptureFragment extends Fragment {
                 int aux_Simple = (int) Math.ceil(freqIndex * freqResolution * 60);
 
                 if( aux_Simple<maxHR && aux_Simple>minHR){
-                    avgWindow = (avgWindow+aux_Simple)/2;
+                    //   avgWindow = (int)(avgWindow * 0.7 + 0.3*aux_Simple);
                 }
 
                 //find all possible peaks
@@ -197,9 +197,10 @@ public class CameraCaptureFragment extends Fragment {
                 // keep and clear history effect when needed
                 if(hrCount>clWindowSize){
                     windowHeartRate.clear();
-                    hrCount ++;
                     hrCount = 0;
                 }
+                hrCount ++;
+                 
                 windowHeartRate.offer(heartRate);
                 if(windowHeartRate.size()>hrWindowSize)
                     windowHeartRate.remove();

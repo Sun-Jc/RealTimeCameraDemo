@@ -200,7 +200,7 @@ public class CameraCaptureFragment extends Fragment {
                     hrCount = 0;
                 }
                 hrCount ++;
-                 
+
                 windowHeartRate.offer(heartRate);
                 if(windowHeartRate.size()>hrWindowSize)
                     windowHeartRate.remove();
